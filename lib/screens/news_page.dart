@@ -1,12 +1,17 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:make_my_day/models/news_loc.dart';
 import 'package:http/http.dart' as http;
 import 'package:make_my_day/screens/news_detail.dart';
 import 'package:make_my_day/screens/news_sources_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class NewsScreenRoute extends CupertinoPageRoute {
+  NewsScreenRoute() : super(builder: (BuildContext context) => new NewsPage());
+}
 
 class NewsPage extends StatefulWidget {
   @override
@@ -15,7 +20,7 @@ class NewsPage extends StatefulWidget {
 
 class _NewsPageState extends State<NewsPage>
     with SingleTickerProviderStateMixin {
-  NewsLoc _newsLoc;
+  List<NewsLoc> source;
 
   List<String> newsCategories = [
     'business',
@@ -35,19 +40,13 @@ class _NewsPageState extends State<NewsPage>
     super.initState();
     _tabController = TabController(vsync: this, length: newsCategories.length);
     category = newsCategories[0];
-    url =
-        'https://newsapi.org/v2/top-headlines?country=in&category=$category&apiKey=48ff06d79a6d4c4e845b60345b3028ae';
-    fetchData();
-
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) {
-        log('helo');
-        setState(() {
-          category = newsCategories[_tabController.index];
-          fetchData();
-        });
-      }
-    });
+    source = List<NewsLoc>(7);
+    for (int i = 0; i < newsCategories.length; i++) {
+      var c = newsCategories[i];
+      url =
+          'https://newsapi.org/v2/top-headlines?country=in&category=$c&apiKey=b76dd2d5ab994d29aedacb95ad4fa36e';
+      fetchData(i);
+    }
   }
 
   @override
@@ -56,75 +55,72 @@ class _NewsPageState extends State<NewsPage>
     super.dispose();
   }
 
-  fetchData() async {
-    _newsLoc = null;
+  fetchData(int i) async {
+    var category = newsCategories.elementAt(i);
     url =
-        'https://newsapi.org/v2/top-headlines?country=in&category=$category&apiKey=48ff06d79a6d4c4e845b60345b3028ae';
+        'https://newsapi.org/v2/top-headlines?country=in&category=$category&apiKey=b76dd2d5ab994d29aedacb95ad4fa36e';
     var res = await http.get(url);
     var decodedJson = jsonDecode(res.body);
-    _newsLoc = NewsLoc.fromJson(decodedJson);
-    setState(() {});
+    source[i] = NewsLoc.fromJson(decodedJson);
+    if (this.mounted) {
+      setState(() {});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) {
-        log('helo');
-        setState(() {
-          category = newsCategories[_tabController.index];
-          fetchData();
-        });
-      }
-    });
     return Scaffold(
-        appBar: AppBar(
-          title: Text('News',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.25)),
-          bottom: TabBar(
-              isScrollable: true,
-              controller: _tabController,
-              tabs: newsCategories
-                  .map((nc) =>
-                      Tab(child: Text(nc[0].toUpperCase() + nc.substring(1))))
-                  .toList()),
-        ),
-        body: TabBarView(
+      appBar: AppBar(
+        title: Text('News',
+            style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.25)),
+        bottom: TabBar(
+            isScrollable: true,
             controller: _tabController,
-            children: newsCategories
-                .map(
-                  (n) => Container(
-                    padding: EdgeInsets.only(top: 8.0),
-                    width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.height,
-                    child: _newsLoc == null
-                        ? Container(
-                            height: MediaQuery.of(context).size.height * 0.5,
-                            child: Center(child: CircularProgressIndicator()))
-                        : ListView.builder(
-                            itemCount: _newsLoc.articles.length,
-                            itemBuilder: ((BuildContext context, int index) {
-                              return _newsSource(
-                                  _newsLoc.articles.elementAt(index));
-                            })),
-                  ),
-                )
-                .toList()
-            // Expanded(
-            //     child: ListView.builder(
-            //         itemCount: _newsLoc != null
-            //             ? _newsLoc.articles != null
-            //                 ? _newsLoc.articles.length
-            //                 : 0
-            //             : 0,
-            //         itemBuilder: ((BuildContext context, int index) {
-            //           return _newsSource(
-            //               _newsLoc.articles.elementAt(index));
-            //         })))
-            ));
+            tabs: newsCategories
+                .map((nc) =>
+                    Tab(child: Text(nc[0].toUpperCase() + nc.substring(1))))
+                .toList()),
+      ),
+      body: TabBarView(controller: _tabController, children: <Widget>[
+        _news(source[0]),
+        _news(source[1]),
+        _news(source[2]),
+        _news(source[3]),
+        _news(source[4]),
+        _news(source[5]),
+        _news(source[6]),
+      ]),
+    );
+    // Expanded(
+    //     child: ListView.builder(
+    //         itemCount: source != null
+    //             ? source.articles != null
+    //                 ? source.articles.length
+    //                 : 0
+    //             : 0,
+    //         itemBuilder: ((BuildContext context, int index) {
+    //           return _newsSource(
+    //               source.articles.elementAt(index));
+    //         })))
+  }
+
+  Widget _news(var source) {
+    return source == null
+        ? Container(
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
+          )
+        : ListView.builder(
+            itemCount: source != null
+                ? source.articles != null ? source.articles.length : 0
+                : 0,
+            itemBuilder: ((BuildContext context, int index) {
+              return _newsSource(source.articles.elementAt(index));
+            }));
   }
 
   Widget _newsSource(var article) {

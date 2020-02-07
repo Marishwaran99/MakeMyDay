@@ -2,18 +2,25 @@ import 'dart:developer';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:make_my_day/models/database_helper.dart';
 import 'package:make_my_day/models/todo.dart';
 import 'package:sqflite/sqflite.dart';
 
+class TodoScreenRoute extends CupertinoPageRoute {
+  TodoScreenRoute()
+      : super(builder: (BuildContext context) => new TodoScreen());
+}
+
 class TodoScreen extends StatefulWidget {
   @override
   _TodoScreenState createState() => _TodoScreenState();
 }
 
-class _TodoScreenState extends State<TodoScreen> {
+class _TodoScreenState extends State<TodoScreen>
+    with SingleTickerProviderStateMixin {
   DatabaseHelper helper = DatabaseHelper();
   int count = 0;
   List<Todo> todosList;
@@ -29,11 +36,11 @@ class _TodoScreenState extends State<TodoScreen> {
 
   Widget _appBarTitle = Text('Tasks',
       style: TextStyle(
-          fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.25));
+          fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5));
 
   Widget _appBarTitleCopy = Text('Tasks',
       style: TextStyle(
-          fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.25));
+          fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5));
   Icon _searchIcon = new Icon(
     CupertinoIcons.search,
   );
@@ -41,9 +48,17 @@ class _TodoScreenState extends State<TodoScreen> {
     CupertinoIcons.clear,
     size: 36,
   );
+  GlobalKey<AnimatedListState> _animKey = GlobalKey<AnimatedListState>();
+  Animation<Offset> _animOffset;
+  AnimationController _animationController;
   Widget _searchTitle;
   @override
   void initState() {
+    // _animationController =
+    //     AnimationController(vsync: this, duration: Duration(milliseconds: 200));
+    // _animOffset = Tween<Offset>(begin: Offset(-1, 0), end: Offset.zero).animate(
+    //     CurvedAnimation(parent: _animationController, curve: Curves.elasticIn));
+
     super.initState();
     var initialisationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/launcher_icon');
@@ -69,6 +84,7 @@ class _TodoScreenState extends State<TodoScreen> {
         });
       },
     );
+    if (this.mounted) setState(() {});
   }
 
   // checkPendingNotifications() async {
@@ -124,14 +140,18 @@ class _TodoScreenState extends State<TodoScreen> {
       ),
       body: Padding(
           padding: EdgeInsets.all(4.0),
-          child: filteredList != null || filteredList.length > 0
-              ? ListView.builder(
-                  itemCount: filteredList.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    return _taskCard(context, filteredList[index], index);
-                  },
-                )
-              : Container()),
+          child: filteredList == null
+              ? CircularProgressIndicator()
+              : filteredList.length > 0
+                  ? ListView.builder(
+                      itemCount: filteredList.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return _taskCard(context, filteredList[index], index);
+                      },
+                    )
+                  : filteredList == null
+                      ? CircularProgressIndicator()
+                      : Center(child: Text('No Tasks yet'))),
     );
   }
 
@@ -258,6 +278,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                                                 todo.id);
                                                             helper.deleteTodo(
                                                                 todo.id);
+
                                                             updateTodoList();
                                                             Navigator.of(
                                                                     context)
@@ -399,8 +420,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                     size: 18.0,
                                   ),
                                   SizedBox(width: 4.0),
-                                  todo.createdAt == null ||
-                                          todo.createdAt == '' && _time == null
+                                  todo.createdAt == null || todo.createdAt == ''
                                       ? Text(
                                           'Set reminder',
                                           style: TextStyle(fontSize: 14.0),
@@ -469,6 +489,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                 helper.updateTodo(todo);
                               }
                               updateTodoList();
+
                               Navigator.pop(context);
                             }
                           })

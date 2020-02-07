@@ -7,6 +7,11 @@ import 'package:sqflite/sqflite.dart';
 import 'dart:developer';
 import 'add_note.dart';
 
+class NotesScreenRoute extends CupertinoPageRoute {
+  NotesScreenRoute()
+      : super(builder: (BuildContext context) => new NotesScreen());
+}
+
 class NotesScreen extends StatefulWidget {
   @override
   _NotesScreenState createState() => _NotesScreenState();
@@ -38,11 +43,11 @@ class _NotesScreenState extends State<NotesScreen> {
   Widget _searchTitle;
   Widget _appBarTitle = Text('Notes',
       style: TextStyle(
-          fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.25));
+          fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5));
 
   Widget _appBarTitleCopy = Text('Notes',
       style: TextStyle(
-          fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.25));
+          fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5));
   Icon _searchIcon = new Icon(CupertinoIcons.search);
   Icon _closeIcon = new Icon(
     CupertinoIcons.clear,
@@ -109,12 +114,16 @@ class _NotesScreenState extends State<NotesScreen> {
       ),
       body: Padding(
           padding: EdgeInsets.symmetric(vertical: 8.0),
-          child: ListView.builder(
-            itemCount: filteredList.length,
-            itemBuilder: (BuildContext context, int index) {
-              return _noteCard(context, filteredList[index], index);
-            },
-          )),
+          child: filteredList == null
+              ? CircularProgressIndicator()
+              : filteredList.length > 0
+                  ? ListView.builder(
+                      itemCount: filteredList.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return _noteCard(context, filteredList[index], index);
+                      },
+                    )
+                  : Center(child: Text('No Notes yet'))),
     );
   }
 
@@ -270,11 +279,12 @@ class _NotesScreenState extends State<NotesScreen> {
     dbFuture.then((database) {
       Future<List<Note>> todosFuture = helper.getnoteList();
       todosFuture.then((notes) {
-        setState(() {
-          this.notesList = notes;
-          this.filteredList = notes;
-          this.count = notes.length;
-        });
+        if (this.mounted)
+          setState(() {
+            this.notesList = notes;
+            this.filteredList = notes;
+            this.count = notes.length;
+          });
       });
     });
   }
