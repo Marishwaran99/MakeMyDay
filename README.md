@@ -1,6 +1,6 @@
 # make_my_day
 
-A new Flutter project.
+A new Flutter project Powered by NewsAPI.org 
 
 ## Getting Started
 
