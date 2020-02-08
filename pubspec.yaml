@@ -35,6 +35,7 @@ dependencies:
   pie_chart:
   flutter_speed_dial:
   table_calendar:
+  transparent_image:
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -19,7 +19,7 @@ class _BudgetStatsScreenState extends State<BudgetStatsScreen> {
   int totalExpense;
   int remainingBalance;
   Map<String, double> dataMap = Map<String, double>();
-  List<Color> colorList = [Colors.deepPurple, Colors.red[200], Colors.green];
+  List<Color> colorList = [Colors.red[200], Colors.deepPurple];
   @override
   void initState() {
     super.initState();
@@ -82,8 +82,6 @@ class _BudgetStatsScreenState extends State<BudgetStatsScreen> {
     }
     setState(() {
       remainingBalance = totalIncome - totalExpense;
-
-      dataMap.putIfAbsent("Income", () => totalIncome.toDouble());
       dataMap.putIfAbsent("Expense", () => totalExpense.toDouble());
       dataMap.putIfAbsent("Balance", () => remainingBalance.toDouble());
     });

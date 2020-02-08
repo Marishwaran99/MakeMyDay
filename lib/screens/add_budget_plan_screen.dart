@@ -88,6 +88,12 @@ class _AddBudgetPlanScreenState extends State<AddBudgetPlanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: Icon(Icons.chevron_left),
+        ),
         title: Text(
           'Add  ' + widget.title,
           style: TextStyle(
@@ -126,7 +132,9 @@ class _AddBudgetPlanScreenState extends State<AddBudgetPlanScreen> {
                       contentPadding: EdgeInsets.only(top: 24, bottom: 8),
                       hasFloatingPlaceholder: true,
                       labelText: 'Enter Descripion(Optional)',
-                      hintText: 'Eg: Spent at hotel '),
+                      hintText: widget.title == 'Income'
+                          ? 'Eg: Profit in business'
+                          : 'Eg: Spent at hotel '),
                 ),
                 SizedBox(height: 16),
                 TextField(
@@ -158,40 +166,64 @@ class _AddBudgetPlanScreenState extends State<AddBudgetPlanScreen> {
                   ),
                 ),
                 SizedBox(height: 16),
-                DropdownButton(
-                  items: categories.map((c) {
-                    return DropdownMenuItem(
-                      value: c,
-                      child: Text(c),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      _category = val;
-                      setState(() {
-                        _budget.category = val;
-                      });
-                    });
-                  },
-                  value: _category,
+                Row(
+                  children: <Widget>[
+                    Text(
+                        widget.title == 'Income' ? 'Obtained By ' : 'Spent At'),
+                    SizedBox(width: 16.0),
+                    DropdownButton(
+                      items: categories.map((c) {
+                        return DropdownMenuItem(
+                          value: c,
+                          child: Text(
+                            c,
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _category = val;
+                          setState(() {
+                            _budget.category = val;
+                          });
+                        });
+                      },
+                      value: _category,
+                    ),
+                  ],
                 ),
                 SizedBox(height: 16),
-                DropdownButton(
-                  items: paymentMode.map((p) {
-                    return DropdownMenuItem(
-                      value: p,
-                      child: Text(p),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      _payment = val;
-                      setState(() {
-                        _budget.paymentMode = val;
-                      });
-                    });
-                  },
-                  value: _payment,
+                Row(
+                  mainAxisSize: MainAxisSize.max,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Text('Payment Mode '),
+                    SizedBox(width: 16.0),
+                    DropdownButton(
+                      items: paymentMode.map((p) {
+                        return DropdownMenuItem(
+                            value: p,
+                            child: Text(
+                              p,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ));
+                      }).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _payment = val;
+                          setState(() {
+                            _budget.paymentMode = val;
+                          });
+                        });
+                      },
+                      value: _payment,
+                    ),
+                  ],
                 ),
                 SizedBox(height: 16),
                 FlatButton(

@@ -391,12 +391,18 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
                     })
               ],
             ),
-            SizedBox(height: 16),
-            Text(formatTimeOfDay(
-                    TimeOfDay.fromDateTime(DateTime.parse(tt.startTime))) +
-                ' - ' +
-                formatTimeOfDay(
-                    TimeOfDay.fromDateTime(DateTime.parse(tt.endTime)))),
+            tt.startTime == null || tt.startTime == ''
+                ? Container()
+                : Column(
+                    children: <Widget>[
+                      SizedBox(height: 16),
+                      Text(formatTimeOfDay(TimeOfDay.fromDateTime(
+                              DateTime.parse(tt.startTime))) +
+                          ' - ' +
+                          formatTimeOfDay(TimeOfDay.fromDateTime(
+                              DateTime.parse(tt.endTime)))),
+                    ],
+                  )
           ],
         ));
   }

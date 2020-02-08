@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -13,6 +14,7 @@ class CalendarEventsScreen extends StatefulWidget {
 class _CalendarEventsScreenState extends State<CalendarEventsScreen> {
   CalendarController _calendarController;
   Map<DateTime, List<dynamic>> _events;
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 
   List<dynamic> _selectedEvents;
   TextEditingController _eventController;
@@ -20,6 +22,15 @@ class _CalendarEventsScreenState extends State<CalendarEventsScreen> {
   @override
   void initState() {
     super.initState();
+    var initialisationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/launcher_icon');
+    var initialisationSettingsIos = IOSInitializationSettings();
+
+    flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+    var initializationSettings = InitializationSettings(
+        initialisationSettingsAndroid, initialisationSettingsIos);
+
+    flutterLocalNotificationsPlugin.initialize(initializationSettings);
     _calendarController = CalendarController();
     _events = Map<DateTime, List<dynamic>>();
     _selectedEvents = List<dynamic>();
@@ -31,6 +42,8 @@ class _CalendarEventsScreenState extends State<CalendarEventsScreen> {
     _sharedPreferences = await SharedPreferences.getInstance();
     _events = Map<DateTime, List<dynamic>>.from(
         decodeMap(json.decode(_sharedPreferences.getString("events") ?? "{}")));
+
+    _selectedEvents = _events[_calendarController.selectedDay];
     setState(() {});
   }
 
@@ -261,6 +274,7 @@ class _CalendarEventsScreenState extends State<CalendarEventsScreen> {
                   }
                   _sharedPreferences.setString(
                       "events", json.encode(encodeMap(_events)));
+
                   _eventController.clear();
                   Navigator.pop(context);
                 });

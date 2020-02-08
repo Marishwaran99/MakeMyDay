@@ -25,6 +25,7 @@ class _AllTransactionScreenState extends State<AllTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    updateBudgetList();
     return Container(
         child: budgets == null
             ? CircularProgressIndicator()
@@ -211,9 +212,10 @@ class _AllTransactionScreenState extends State<AllTransactionScreen> {
     dbFuture.then((database) {
       Future<List<Budget>> budgetFuture = _helper.getBudgetList();
       budgetFuture.then((budgetDb) {
-        setState(() {
-          this.budgets = budgetDb;
-        });
+        if (this.mounted)
+          setState(() {
+            this.budgets = budgetDb;
+          });
       });
     });
   }

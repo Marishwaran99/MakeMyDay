@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:make_my_day/screens/news_detail.dart';
 import 'package:make_my_day/screens/news_sources_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 class NewsScreenRoute extends CupertinoPageRoute {
   NewsScreenRoute() : super(builder: (BuildContext context) => new NewsPage());
@@ -147,10 +148,16 @@ class _NewsPageState extends State<NewsPage>
                           Container(
                             width: MediaQuery.of(context).size.width - 32,
                             height: MediaQuery.of(context).size.height * 0.4,
-                            decoration: BoxDecoration(
-                                image: DecorationImage(
-                                    image: NetworkImage(article.urlToImage),
-                                    fit: BoxFit.cover)),
+                            child: Stack(children: <Widget>[
+                              Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                              Center(
+                                child: FadeInImage.memoryNetwork(
+                                    placeholder: kTransparentImage,
+                                    image: article.urlToImage),
+                              )
+                            ]),
                           ),
                           SizedBox(
                             height: 16.0,
