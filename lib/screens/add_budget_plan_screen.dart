@@ -90,7 +90,7 @@ class _AddBudgetPlanScreenState extends State<AddBudgetPlanScreen> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pop(context, true);
           },
           icon: Icon(Icons.chevron_left),
         ),

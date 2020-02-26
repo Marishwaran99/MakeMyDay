@@ -321,72 +321,37 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
                 IconButton(
                     icon: Icon(
                       CupertinoIcons.delete_simple,
-                      color: Colors.red[200],
+                      color: Colors.red[300],
                     ),
                     onPressed: () {
                       showDialog(
                           context: context,
                           builder: (context) {
-                            return Dialog(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16.0)),
-                                backgroundColor: Colors.grey,
-                                child: Container(
-                                    child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: <Widget>[
-                                    SizedBox(height: 16),
-                                    Text('Delete'),
-                                    SizedBox(height: 16),
-                                    Text('Are you sure?'),
-                                    SizedBox(height: 16),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                          border: Border(
-                                              top: BorderSide(
-                                                  color: Colors.grey[600],
-                                                  width: 0.5))),
-                                      child: Row(
-                                        children: <Widget>[
-                                          Expanded(
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                  border: Border(
-                                                      right: BorderSide(
-                                                          color:
-                                                              Colors.grey[600],
-                                                          width: 1))),
-                                              child: FlatButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text(
-                                                    'Keep',
-                                                    style: TextStyle(
-                                                        color:
-                                                            Colors.deepPurple),
-                                                  )),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: FlatButton(
-                                                onPressed: () {
-                                                  _helper
-                                                      .deleteTimeTable(tt.id);
-                                                  updateTTList();
-                                                  Navigator.pop(context);
-                                                },
-                                                child: Text(
-                                                  'Delete',
-                                                  style: TextStyle(
-                                                      color: Colors.red[700]),
-                                                )),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                )));
+                            return CupertinoAlertDialog(
+                              title: Text('Delete'),
+                              content: Text('Are you sure?'),
+                              actions: <Widget>[
+                                FlatButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text(
+                                      'Keep',
+                                      style: TextStyle(
+                                          color: Colors.deepPurple[400]),
+                                    )),
+                                FlatButton(
+                                    onPressed: () {
+                                      _helper.deleteTimeTable(tt.id);
+                                      updateTTList();
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text(
+                                      'Delete',
+                                      style: TextStyle(color: Colors.red[700]),
+                                    )),
+                              ],
+                            );
                           });
                     })
               ],

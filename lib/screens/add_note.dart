@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:make_my_day/models/note.dart';
 import 'package:make_my_day/models/note_database_helper.dart';
+import 'package:share/share.dart';
 import 'package:toast/toast.dart';
 
 class AddNotePage extends StatefulWidget {
@@ -30,8 +31,19 @@ class _AddNotePageState extends State<AddNotePage> {
     return Scaffold(
         resizeToAvoidBottomPadding: true,
         appBar: AppBar(
-          title: Text(appBarTitle, style: TextStyle(fontSize: 18)),
+          title: Text(appBarTitle,
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.25)),
           actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.share),
+              onPressed: () {
+                if (_descriptionController.text.length > 0)
+                  Share.share(_descriptionController.text);
+              },
+            ),
             IconButton(
               icon: Icon(Icons.check),
               onPressed: () {
@@ -41,7 +53,7 @@ class _AddNotePageState extends State<AddNotePage> {
           ],
           leading: IconButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              _save();
             },
             icon: Icon(Icons.chevron_left),
           ),
@@ -62,9 +74,8 @@ class _AddNotePageState extends State<AddNotePage> {
                       focusNode: _descriptionFocus,
                       style: TextStyle(
                           fontFamily: 'Montserrat',
-                          color: Colors.grey[700],
+                          color: Colors.grey[800],
                           fontSize: 16,
-                          letterSpacing: 1,
                           height: 1.25),
                       backgroundCursorColor: Colors.deepPurple,
                       cursorColor: Colors.deepPurple,
@@ -77,24 +88,22 @@ class _AddNotePageState extends State<AddNotePage> {
 
   void _save() async {
     note.description = _descriptionController.text;
-    note.noteColor = Color(0xffffffff).value.toString();
-
-    var df = DateFormat('dd-MM-yyyy kk:mm a');
-    note.createdAt = df.format(DateTime.now());
+    note.noteColor = Color(0xffe9eaee).value.toString();
+    note.createdAt = DateFormat.yMMMEd().add_jm().format(DateTime.now());
     int result;
-
-    if (note.id == null)
-      result = await helper.insertnote(note);
-    else
-      result = await helper.updatenote(note);
-    if (result != 0) {
-      Toast.show("Saved Successfully", context,
-          duration: Toast.LENGTH_SHORT, gravity: Toast.BOTTOM);
-
+    if (note.description.length > 0) {
+      if (note.id == null)
+        result = await helper.insertnote(note);
+      else
+        result = await helper.updatenote(note);
+      if (result != 0) {
+        Toast.show("Saved Successfully", context,
+            duration: Toast.LENGTH_SHORT, gravity: Toast.BOTTOM);
+      } else {
+        Toast.show("Something went wrong", context,
+            duration: Toast.LENGTH_SHORT, gravity: Toast.BOTTOM);
+      }
       Navigator.pop(context, true);
-    } else {
-      Toast.show("Something went wrong", context,
-          duration: Toast.LENGTH_SHORT, gravity: Toast.BOTTOM);
     }
   }
 }

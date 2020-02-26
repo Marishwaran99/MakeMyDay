@@ -3,10 +3,9 @@ import 'dart:developer';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:make_my_day/models/news_loc.dart';
 import 'package:http/http.dart' as http;
+import 'package:make_my_day/models/news_loc.dart';
 import 'package:make_my_day/screens/news_detail.dart';
-import 'package:make_my_day/screens/news_sources_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transparent_image/transparent_image.dart';
 
@@ -95,17 +94,6 @@ class _NewsPageState extends State<NewsPage>
         _news(source[6]),
       ]),
     );
-    // Expanded(
-    //     child: ListView.builder(
-    //         itemCount: source != null
-    //             ? source.articles != null
-    //                 ? source.articles.length
-    //                 : 0
-    //             : 0,
-    //         itemBuilder: ((BuildContext context, int index) {
-    //           return _newsSource(
-    //               source.articles.elementAt(index));
-    //         })))
   }
 
   Widget _news(var source) {

@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:intl/intl.dart';
 import 'package:make_my_day/models/note.dart';
 import 'package:make_my_day/models/note_database_helper.dart';
+import 'package:share/share.dart';
 import 'package:sqflite/sqflite.dart';
 import 'dart:developer';
 import 'add_note.dart';
@@ -25,7 +27,8 @@ class _NotesScreenState extends State<NotesScreen> {
 
   TextEditingController _searchController = TextEditingController();
   final colors = [
-    Color(0xffffffff), // classic white
+    Color(0xffe9eaee),
+    Color(0xffb0bec5), // classic gray
     Color(0xfff7bd02), // yellow
     Color(0xfffbf476), // light yellow
     Color(0xffcdff90), // light green
@@ -35,7 +38,7 @@ class _NotesScreenState extends State<NotesScreen> {
     Color(0xffd7aefc), // plum
     Color(0xfffbcfe9), // misty rose
     Color(0xffe6c9a9), // light brown
-    Color(0xffe9eaee) // light gray
+    // light gray
   ];
 
   Color noteColor;
@@ -93,7 +96,7 @@ class _NotesScreenState extends State<NotesScreen> {
                 } else {
                   _searchController.text = '';
                   filteredList = notesList;
-                  this._searchIcon = Icon(Icons.search);
+                  this._searchIcon = Icon(CupertinoIcons.search);
                   this._appBarTitle = _appBarTitleCopy;
                 }
               });
@@ -164,16 +167,16 @@ class _NotesScreenState extends State<NotesScreen> {
                         height: 8.0,
                       ),
                       Text(
-                        'Created at ' + note.createdAt,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        note.createdAt,
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       ),
                       SizedBox(
-                        height: 24.0,
+                        height: 8.0,
                       ),
                       Row(
                         children: <Widget>[
-                          InkWell(
-                            onTap: () {
+                          IconButton(
+                            onPressed: () {
                               showModalBottomSheet(
                                   builder: (BuildContext context) {
                                     return Container(
@@ -202,26 +205,44 @@ class _NotesScreenState extends State<NotesScreen> {
                                   },
                                   context: context);
                             },
-                            child: Icon(
+                            icon: Icon(
                               Icons.color_lens,
                               color: Colors.deepPurple,
                             ),
                           ),
-                          SizedBox(width: 24),
-                          InkWell(
-                            onTap: () {
+                          SizedBox(width: 8),
+                          IconButton(
+                            onPressed: () {
+                              Share.share(note.description);
+                            },
+                            icon: Icon(
+                              Icons.share,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          IconButton(
+                            onPressed: () {
                               showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: Text('Delete Note'),
+                                    return CupertinoAlertDialog(
+                                      title: Text(
+                                        'Delete Note',
+                                        style:
+                                            TextStyle(fontFamily: 'Montserrat'),
+                                      ),
                                       content: Text(
-                                          'Are you sure to delete this note ?'),
+                                        'Are you sure to delete this note ?',
+                                        style:
+                                            TextStyle(fontFamily: 'Montserrat'),
+                                      ),
                                       actions: <Widget>[
                                         FlatButton(
                                           child: Text('Keep',
                                               style: TextStyle(
-                                                  color: Colors.deepPurple)),
+                                                  color: Colors.white,
+                                                  fontFamily: 'Montserrat')),
                                           onPressed: () {
                                             Navigator.of(context).pop();
                                           },
@@ -242,7 +263,7 @@ class _NotesScreenState extends State<NotesScreen> {
                                     );
                                   });
                             },
-                            child: Icon(
+                            icon: Icon(
                               CupertinoIcons.delete_simple,
                               color: Colors.red[300],
                             ),

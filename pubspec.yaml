@@ -36,6 +36,9 @@ dependencies:
   flutter_speed_dial:
   table_calendar:
   transparent_image:
+  share: 0.6.3+5
+  uuid: 2.0.4
+  provider: ^2.0.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -51,8 +54,9 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #  - images/a_dot_burr.jpeg
+  assets:
+    - images/onboard1.jpg
+    - images/onboard2.jpg
   #  - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

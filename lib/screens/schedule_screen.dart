@@ -8,7 +8,7 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
-  List<String> _scheduleTabs = ['Day Schdule', 'Week Schedule'];
+  List<String> _scheduleTabs = ['Day Schedule', 'Week Schedule'];
   List<Widget> _screens = [CalendarEventsScreen(), WeeklyPlanScreen()];
   int _index = 0;
   @override
@@ -38,6 +38,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       padding:
                           EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                              topLeft:
+                                  i == 0 ? Radius.circular(4) : Radius.zero,
+                              bottomLeft:
+                                  i == 0 ? Radius.circular(4.0) : Radius.zero,
+                              topRight:
+                                  i == 1 ? Radius.circular(4) : Radius.zero,
+                              bottomRight:
+                                  i == 1 ? Radius.circular(4) : Radius.zero),
                           border: Border.all(color: Colors.white),
                           color: isSelected ? Colors.white : Colors.deepPurple),
                       child: Center(
@@ -48,7 +57,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1,
                             color:
-                                isSelected ? Colors.deepPurple : Colors.white,
+                                isSelected ? Colors.deepPurple : Colors.white70,
                           ),
                         ),
                       )),

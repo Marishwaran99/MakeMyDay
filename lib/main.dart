@@ -1,13 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:make_my_day/components/bottom_bar.dart';
 import 'package:make_my_day/screens/budget_plan_screen.dart';
 import 'package:make_my_day/screens/calendar_events_screen.dart';
-import 'package:make_my_day/screens/news_page.dart';
+import 'package:make_my_day/screens/home.dart';
+import 'package:make_my_day/screens/obboarding_screen.dart';
 import 'package:make_my_day/screens/schedule_screen.dart';
 import 'package:make_my_day/screens/todo_screen.dart';
 import 'package:make_my_day/screens/weekly_plan_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/notes_screen.dart';
 
@@ -18,7 +22,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Todo',
+      title: 'Make My Day',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
           // This is the theme of your application.
@@ -30,7 +34,6 @@ class MyApp extends StatelessWidget {
           // or simply save your changes to "hot reload" in a Flutter IDE).
           // Notice that the counter didn't reset back to zero; the application
           // is not restarted.
-          brightness: Brightness.light,
           fontFamily: 'Montserrat',
           primaryColor: Colors.deepPurple,
           accentColor: Colors.deepPurple),
@@ -44,54 +47,23 @@ class HomeScreen extends StatefulWidget {
   HomeScreenState createState() => HomeScreenState();
 }
 
-class HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
-  int _index = 0;
-  PageController _pageController;
-  List<BarItem> _bottomBarItem = [
-    BarItem(title: 'Tasks', iconData: Icons.playlist_add_check),
-    BarItem(title: 'Notes', iconData: Icons.edit),
-    BarItem(title: 'News', iconData: Icons.live_tv),
-    BarItem(title: 'Plan', iconData: Icons.event_note),
-    BarItem(title: 'Budget', iconData: Icons.attach_money),
-  ];
-  final List<Widget> _screens = [
-    TodoScreen(),
-    NotesScreen(),
-    NewsPage(),
-    ScheduleScreen(),
-    BudgetPlanScreen()
-  ];
-
+class HomeScreenState extends State<HomeScreen> {
+  SharedPreferences _preferences;
+  bool onboard = true;
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    initPreferences();
+  }
+
+  initPreferences() async {
+    _preferences = await SharedPreferences.getInstance();
+    onboard = _preferences.getBool("onboard") == null ? true : false;
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        body: PageView.builder(
-            scrollDirection: Axis.horizontal,
-            physics: NeverScrollableScrollPhysics(),
-            controller: _pageController,
-            // onPageChanged: (i) {
-            //   setState(() {
-            //     _index = i;
-            //   });
-            // },
-            itemCount: _screens.length,
-            itemBuilder: (BuildContext context, int i) {
-              return _screens[i];
-            }),
-        bottomNavigationBar: AnimatedBottomBar(
-            barItems: _bottomBarItem,
-            duration: Duration(milliseconds: 200),
-            onBarTap: (i) {
-              _pageController.animateToPage(i,
-                  duration: Duration(milliseconds: 250),
-                  curve: Curves.easeInOut);
-            }));
+    return Scaffold(body: onboard ? OnBoarding() : Home());
   }
 }

@@ -42,8 +42,8 @@ class _AnimatedBottomBarState extends State<AnimatedBottomBar>
       var item = widget.barItems.elementAt(i);
       bool isSelected = selectedIndex == i;
       _barItems.add(InkWell(
-        hoverColor: Colors.transparent,
-        splashColor: Colors.transparent,
+        hoverColor: Colors.grey[200],
+        splashColor: Colors.grey[200],
         onTap: () {
           setState(() {
             selectedIndex = i;

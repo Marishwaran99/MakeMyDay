@@ -1,10 +1,17 @@
 import 'dart:convert';
+import 'dart:developer';
+import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:make_my_day/models/calendar_event.dart';
+import 'package:make_my_day/models/calendar_event_helper.dart';
+import 'package:make_my_day/screens/add_event.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:uuid/uuid.dart';
 
 class CalendarEventsScreen extends StatefulWidget {
   @override
@@ -14,11 +21,12 @@ class CalendarEventsScreen extends StatefulWidget {
 class _CalendarEventsScreenState extends State<CalendarEventsScreen> {
   CalendarController _calendarController;
   Map<DateTime, List<dynamic>> _events;
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
-
   List<dynamic> _selectedEvents;
-  TextEditingController _eventController;
-  SharedPreferences _sharedPreferences;
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+  TextEditingController _eventController = TextEditingController();
+  SharedPreferences _preferences;
+  Map<String, dynamic> event;
+
   @override
   void initState() {
     super.initState();
@@ -34,17 +42,23 @@ class _CalendarEventsScreenState extends State<CalendarEventsScreen> {
     _calendarController = CalendarController();
     _events = Map<DateTime, List<dynamic>>();
     _selectedEvents = List<dynamic>();
-    _eventController = TextEditingController();
+
     initializeSharedPrefs();
   }
 
   initializeSharedPrefs() async {
-    _sharedPreferences = await SharedPreferences.getInstance();
-    _events = Map<DateTime, List<dynamic>>.from(
-        decodeMap(json.decode(_sharedPreferences.getString("events") ?? "{}")));
+    _preferences = await SharedPreferences.getInstance();
 
-    _selectedEvents = _events[_calendarController.selectedDay];
-    setState(() {});
+    setState(() {
+      _events = Map<DateTime, List<dynamic>>.from(
+          decodeMap(json.decode(_preferences.getString('events') ?? "{}")));
+
+      var now = DateTime.now();
+      _selectedEvents =
+          _events[DateTime.utc(now.year, now.month, now.day, 12, 0, 0, 0)];
+      print(_events.toString());
+      print(_selectedEvents.toString());
+    });
   }
 
   Map<String, dynamic> encodeMap(Map<DateTime, dynamic> map) {
@@ -52,7 +66,6 @@ class _CalendarEventsScreenState extends State<CalendarEventsScreen> {
     map.forEach((key, value) {
       newMap[key.toString()] = map[key];
     });
-
     return newMap;
   }
 
@@ -67,222 +80,312 @@ class _CalendarEventsScreenState extends State<CalendarEventsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              _showEventAddDialog(context);
-            },
-            child: Icon(Icons.add)),
-        body: SingleChildScrollView(
-          child: Container(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                TableCalendar(
-                  initialCalendarFormat: CalendarFormat.month,
-                  events: _events,
-                  calendarStyle: CalendarStyle(
-                      canEventMarkersOverflow: true,
-                      todayColor: Colors.deepPurple,
-                      selectedColor:
-                          Theme.of(context).primaryColor.withOpacity(0.25),
-                      todayStyle: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18.0,
-                          color: Colors.white)),
-                  headerStyle: HeaderStyle(
-                    centerHeaderTitle: true,
-                    formatButtonDecoration: BoxDecoration(
-                      color: Colors.deepPurple,
-                      borderRadius: BorderRadius.circular(40.0),
-                    ),
-                    formatButtonTextStyle: TextStyle(color: Colors.white),
-                    formatButtonShowsNext: false,
-                  ),
-                  startingDayOfWeek: StartingDayOfWeek.monday,
-                  onDaySelected: (date, events) {
-                    setState(() {
-                      _selectedEvents = events;
-                    });
-                  },
-                  builders: CalendarBuilders(
-                      selectedDayBuilder: (context, date, events) => Container(
-                          margin: const EdgeInsets.all(4.0),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor,
-                              borderRadius: BorderRadius.circular(48.0)),
-                          child: Text(
-                            date.day.toString(),
-                            style: TextStyle(color: Colors.white),
-                          )),
-                      todayDayBuilder: (context, date, events) {
-                        return Container(
-                            margin: const EdgeInsets.all(4.0),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                                color: Colors.deepPurple,
-                                borderRadius: BorderRadius.circular(48.0)),
-                            child: Text(
-                              date.day.toString(),
-                              style: TextStyle(color: Colors.white),
-                            ));
-                      }),
-                  calendarController: _calendarController,
+      appBar: AppBar(
+          title: Text(
+        'Day  Schedule',
+        style: TextStyle(
+            fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.25),
+      )),
+      floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            event = {
+              "id": null,
+              "title": "",
+              "description": "",
+              "location": "",
+              "guests": "",
+              "type": "Event",
+            };
+
+            bool chk = await Navigator.push(context,
+                MaterialPageRoute(builder: (BuildContext ctx) {
+              print(_calendarController.selectedDay.toString());
+              return AddEventScreen(event, _calendarController.selectedDay);
+            }));
+            if (chk) {
+              initializeSharedPrefs();
+            }
+          },
+          child: Icon(Icons.add)),
+      body: Container(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            TableCalendar(
+              initialCalendarFormat: CalendarFormat.month,
+              events: _events,
+              calendarStyle: CalendarStyle(
+                  canEventMarkersOverflow: false,
+                  markersColor: Colors.red[200],
+                  todayColor: Colors.deepPurple,
+                  selectedColor: Colors.grey.withOpacity(0.25),
+                  todayStyle: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18.0,
+                      color: Colors.white)),
+              headerStyle: HeaderStyle(
+                centerHeaderTitle: true,
+                formatButtonDecoration: BoxDecoration(
+                  color: Colors.deepPurple,
+                  borderRadius: BorderRadius.circular(40.0),
                 ),
-                SizedBox(
-                  height: 16,
+                formatButtonTextStyle: TextStyle(color: Colors.white),
+                formatButtonShowsNext: false,
+              ),
+              startingDayOfWeek: StartingDayOfWeek.monday,
+              onDaySelected: (date, events) {
+                setState(() {
+                  _selectedEvents = events;
+                });
+              },
+              builders: CalendarBuilders(
+                  selectedDayBuilder: (context, date, events) => Container(
+                      margin: const EdgeInsets.all(4.0),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          borderRadius: BorderRadius.circular(48.0)),
+                      child: Text(
+                        date.day.toString(),
+                        style: TextStyle(color: Colors.white),
+                      )),
+                  todayDayBuilder: (context, date, events) {
+                    return Container(
+                        margin: const EdgeInsets.all(4.0),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                            color: Colors.deepPurple,
+                            borderRadius: BorderRadius.circular(48.0)),
+                        child: Text(
+                          date.day.toString(),
+                          style: TextStyle(color: Colors.white),
+                        ));
+                  }),
+              calendarController: _calendarController,
+            ),
+            SizedBox(
+              height: 16,
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'On this Day',
+                style: TextStyle(
+                  color: Colors.deepPurple,
+                  fontSize: 14,
+                  wordSpacing: 2,
+                  fontWeight: FontWeight.bold,
                 ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    'Events',
-                    style: TextStyle(
-                        color: Colors.deepPurple,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5),
-                  ),
-                ),
-                SizedBox(
-                  height: 16.0,
-                ),
-                LimitedBox(
-                    maxHeight: 500,
-                    child: _selectedEvents != null
+              ),
+            ),
+            SizedBox(
+              height: 16.0,
+            ),
+            Expanded(
+                child: _selectedEvents != null
+                    ? _selectedEvents.length > 0
                         ? ListView.builder(
                             itemCount: _selectedEvents.length,
-                            itemBuilder: (BuildContext context, int i) =>
-                                Container(
+                            itemBuilder: (BuildContext context, int i) {
+                              Map<String, dynamic> evt =
+                                  _selectedEvents.elementAt(i);
+
+                              IconData icon;
+                              String evtType =
+                                  evt["type"].toString().toLowerCase();
+                              print(evt);
+                              if (evtType == "event")
+                                icon = Icons.check_box;
+                              else if (evtType == "birthday")
+                                icon = Icons.cake;
+                              else
+                                icon = Icons.bookmark;
+
+                              return InkWell(
+                                onTap: () async {
+                                  Navigator.push(context, MaterialPageRoute(
+                                      builder: (BuildContext ctx) {
+                                    return AddEventScreen(
+                                        evt, _calendarController.selectedDay);
+                                  }));
+                                },
+                                child: Container(
                                   margin: EdgeInsets.symmetric(
                                       horizontal: 16, vertical: 8),
+                                  padding: EdgeInsets.only(
+                                      left: 8, top: 16, right: 8),
                                   decoration: BoxDecoration(
                                       color: Colors.grey[200],
                                       borderRadius: BorderRadius.circular(8.0)),
-                                  child: ListTile(
-                                      trailing: InkWell(
-                                          child: Icon(
-                                            CupertinoIcons.delete_simple,
-                                            color: Colors.red[300],
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: <Widget>[
+                                          Icon(
+                                            icon,
+                                            color: Colors.deepPurple,
+                                            size: 16,
                                           ),
-                                          onTap: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (BuildContext context) {
-                                                return CupertinoAlertDialog(
-                                                  title: Text(
-                                                    'Delete Event',
-                                                    style: TextStyle(
-                                                        fontFamily:
-                                                            'Montserrat'),
-                                                  ),
-                                                  content: Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                            top: 8.0),
-                                                    child: Text(
-                                                      'Are you sure to delete this event ?',
-                                                      style: TextStyle(
-                                                          fontFamily:
-                                                              'Montserrat',
-                                                          letterSpacing: 0.5),
-                                                    ),
-                                                  ),
-                                                  actions: <Widget>[
-                                                    FlatButton(
-                                                      child: Text('Keep',
-                                                          style: TextStyle(
-                                                              color: Colors
-                                                                  .white)),
-                                                      onPressed: () {
-                                                        Navigator.of(context)
-                                                            .pop();
-                                                      },
-                                                    ),
-                                                    FlatButton(
-                                                      child: Text(
-                                                        'Delete',
-                                                        style: TextStyle(
-                                                            color: Colors
-                                                                .redAccent),
-                                                      ),
-                                                      onPressed: () {
-                                                        setState(() {
-                                                          _selectedEvents
-                                                              .removeAt(i);
-                                                          _events[_calendarController
-                                                                  .selectedDay] =
-                                                              _selectedEvents;
-                                                        });
-                                                        Navigator.pop(context);
-                                                      },
+                                          SizedBox(width: 8.0),
+                                          Text(evt["title"],
+                                              style: TextStyle(fontSize: 16)),
+                                        ],
+                                      ),
+                                      SizedBox(height: 16.0),
+                                      evt["location"] != ''
+                                          ? Column(
+                                              children: <Widget>[
+                                                Row(
+                                                  children: <Widget>[
+                                                    Icon(Icons.location_on,
+                                                        size: 14,
+                                                        color:
+                                                            Colors.deepPurple),
+                                                    SizedBox(width: 8.0),
+                                                    Text(
+                                                      evt["location"],
                                                     ),
                                                   ],
+                                                ),
+                                                SizedBox(height: 8.0),
+                                              ],
+                                            )
+                                          : Container(),
+                                      evt["guests"] != ''
+                                          ? Column(
+                                              children: <Widget>[
+                                                Row(
+                                                  children: <Widget>[
+                                                    Icon(
+                                                      Icons.group,
+                                                      size: 14,
+                                                      color: Colors.deepPurple,
+                                                    ),
+                                                    SizedBox(width: 8.0),
+                                                    Text(evt["guests"]),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 8.0),
+                                              ],
+                                            )
+                                          : Container(),
+                                      Row(
+                                        children: <Widget>[
+                                          IconButton(
+                                              color: Colors.red[300],
+                                              icon: Icon(
+                                                  CupertinoIcons.delete_simple),
+                                              onPressed: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder:
+                                                      (BuildContext context) {
+                                                    return CupertinoAlertDialog(
+                                                      title: Text(
+                                                        'Delete Event',
+                                                        style: TextStyle(
+                                                            fontFamily:
+                                                                'Montserrat'),
+                                                      ),
+                                                      content: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .only(top: 8.0),
+                                                        child: Text(
+                                                          'Are you sure to delete this event ?',
+                                                          style: TextStyle(
+                                                              fontFamily:
+                                                                  'Montserrat',
+                                                              letterSpacing:
+                                                                  0.5),
+                                                        ),
+                                                      ),
+                                                      actions: <Widget>[
+                                                        FlatButton(
+                                                          child: Text('Keep',
+                                                              style: TextStyle(
+                                                                  color: Colors
+                                                                      .white)),
+                                                          onPressed: () {
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop();
+                                                          },
+                                                        ),
+                                                        FlatButton(
+                                                          child: Text(
+                                                            'Delete',
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .redAccent),
+                                                          ),
+                                                          onPressed: () {
+                                                            setState(() {
+                                                              var e =
+                                                                  _selectedEvents
+                                                                      .removeAt(
+                                                                          i);
+
+                                                              _events[_calendarController
+                                                                      .selectedDay] =
+                                                                  _selectedEvents;
+                                                              print(e);
+                                                              _cancelNotification(
+                                                                  e["id"]);
+                                                              _preferences.setString(
+                                                                  'events',
+                                                                  json.encode(
+                                                                      encodeMap(
+                                                                          _events)));
+                                                            });
+                                                            Navigator.pop(
+                                                                context);
+                                                          },
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
                                                 );
-                                              },
-                                            );
-                                          }),
-                                      title:
-                                          Text(_selectedEvents.elementAt(i))),
-                                ))
-                        : Text('No Events'))
-              ],
-            ),
-          ),
-        ));
+                                              }),
+                                        ],
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              );
+                            })
+                        : Container(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Text('No Events'))
+                    : Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text('No Events')))
+          ],
+        ),
+      ),
+    );
   }
 
-  _showEventAddDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            'Add Event',
-            style: TextStyle(fontFamily: 'Montserrat'),
-          ),
-          content: Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: TextField(
-              controller: _eventController,
-              style: TextStyle(fontFamily: 'Montserrat', letterSpacing: 0.5),
-            ),
-          ),
-          actions: <Widget>[
-            FlatButton(
-              child: Text('Cancel', style: TextStyle(color: Colors.white)),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            FlatButton(
-              child: Text(
-                'Save',
-                style: TextStyle(color: Colors.deepPurple),
-              ),
-              onPressed: () {
-                if (_eventController.text.isEmpty) {
-                  return;
-                }
-                setState(() {
-                  if (_events[_calendarController.selectedDay] != null) {
-                    _events[_calendarController.selectedDay]
-                        .add(_eventController.text);
-                  } else {
-                    _events[_calendarController.selectedDay] = [
-                      _eventController.text
-                    ];
-                  }
-                  _sharedPreferences.setString(
-                      "events", json.encode(encodeMap(_events)));
+  Future _cancelNotification(int id) async {
+    await flutterLocalNotificationsPlugin.cancel(id);
+  }
 
-                  _eventController.clear();
-                  Navigator.pop(context);
-                });
-              },
-            ),
-          ],
-        );
-      },
+  Future _setNotification(
+      Map<String, dynamic> event, DateTime selectedTime) async {
+    var androidSpecificChanges = AndroidNotificationDetails(
+      event['id'].toString(),
+      "channel1",
+      "this is test channel",
     );
+    var iosSpecificChanges = IOSNotificationDetails();
+
+    var platformChannelSpecifics =
+        NotificationDetails(androidSpecificChanges, iosSpecificChanges);
+    await flutterLocalNotificationsPlugin.schedule(event['id'], 'Event',
+        event['title'], selectedTime, platformChannelSpecifics);
   }
 }

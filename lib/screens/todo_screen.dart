@@ -2,11 +2,11 @@ import 'dart:developer';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:make_my_day/models/database_helper.dart';
 import 'package:make_my_day/models/todo.dart';
+import 'package:make_my_day/screens/add_todo.dart';
 import 'package:sqflite/sqflite.dart';
 
 class TodoScreenRoute extends CupertinoPageRoute {
@@ -28,7 +28,7 @@ class _TodoScreenState extends State<TodoScreen>
   TextEditingController _taskController = TextEditingController();
   var _taskFocus = FocusNode();
   Todo selectedTodo;
-  var _time;
+  TimeOfDay _time;
   int selectedTodoIdx;
   List<Todo> filteredList;
 
@@ -48,17 +48,10 @@ class _TodoScreenState extends State<TodoScreen>
     CupertinoIcons.clear,
     size: 36,
   );
-  GlobalKey<AnimatedListState> _animKey = GlobalKey<AnimatedListState>();
-  Animation<Offset> _animOffset;
-  AnimationController _animationController;
   Widget _searchTitle;
+  bool _isVisible;
   @override
   void initState() {
-    // _animationController =
-    //     AnimationController(vsync: this, duration: Duration(milliseconds: 200));
-    // _animOffset = Tween<Offset>(begin: Offset(-1, 0), end: Offset.zero).animate(
-    //     CurvedAnimation(parent: _animationController, curve: Curves.elasticIn));
-
     super.initState();
     var initialisationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/launcher_icon');
@@ -87,19 +80,15 @@ class _TodoScreenState extends State<TodoScreen>
     if (this.mounted) setState(() {});
   }
 
-  // checkPendingNotifications() async {
-  //   var pendingNotificationRequests =
-  //       await flutterLocalNotificationsPlugin.pendingNotificationRequests();
-  //   var r = pendingNotificationRequests.elementAt(0);
-  //   log('$r');
-  //
-
   @override
   Widget build(BuildContext context) {
+    _isVisible = true;
     if (todosList == null) {
       todosList = List<Todo>();
       filteredList = List<Todo>();
       updateTodoList();
+
+      log(todosList.toString());
     }
     return Scaffold(
       appBar: AppBar(title: this._appBarTitle, actions: <Widget>[
@@ -121,37 +110,39 @@ class _TodoScreenState extends State<TodoScreen>
       ]),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          _taskController.text = '';
-          _time = null;
-          showModalBottomSheet(
-              context: context,
-              builder: (context) {
-                Todo todo = Todo(title: '', createdAt: '', isDone: 'false');
-                return Padding(
-                  padding: MediaQuery.of(context).viewInsets,
-                  child: todoBottomSheet(todo, context),
-                );
-              });
+          bool nav = await Navigator.push(context,
+              MaterialPageRoute(builder: (BuildContext ctx) {
+            return AddTodoScreen(Todo(
+                title: '',
+                isDone: 'false',
+                isDailyTask: 'false',
+                createdAt: ''));
+          }));
+          if (nav) updateTodoList();
         },
         child: Icon(
           CupertinoIcons.add,
           size: 36,
         ),
       ),
-      body: Padding(
-          padding: EdgeInsets.all(4.0),
-          child: filteredList == null
-              ? CircularProgressIndicator()
-              : filteredList.length > 0
-                  ? ListView.builder(
-                      itemCount: filteredList.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        return _taskCard(context, filteredList[index], index);
-                      },
-                    )
-                  : filteredList == null
-                      ? CircularProgressIndicator()
-                      : Center(child: Text('No Tasks yet'))),
+      body: AnimatedOpacity(
+        child: Padding(
+            padding: EdgeInsets.all(4.0),
+            child: filteredList == null
+                ? CircularProgressIndicator()
+                : filteredList.length > 0
+                    ? ListView.builder(
+                        itemCount: filteredList.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          return _taskCard(context, filteredList[index], index);
+                        },
+                      )
+                    : filteredList == null
+                        ? CircularProgressIndicator()
+                        : Center(child: Text('No Tasks yet'))),
+        opacity: _isVisible ? 1 : 0.75,
+        duration: Duration(milliseconds: 400),
+      ),
     );
   }
 
@@ -159,7 +150,7 @@ class _TodoScreenState extends State<TodoScreen>
     return Container(
       width: MediaQuery.of(context).size.width - 16.0,
       child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
           child: Material(
               borderRadius: BorderRadius.circular(8.0),
               color: Colors.grey[200],
@@ -169,19 +160,10 @@ class _TodoScreenState extends State<TodoScreen>
                   hoverColor: Colors.grey[300],
                   focusColor: Colors.grey[300],
                   onTap: () {
-                    setState(() {
-                      selectedTodoIdx = index;
-                    });
-                    showModalBottomSheet(
-                        isScrollControlled: true,
-                        context: context,
-                        builder: (context) {
-                          _taskController.text = todo.title;
-                          return Padding(
-                            padding: MediaQuery.of(context).viewInsets,
-                            child: todoBottomSheet(todo, context),
-                          );
-                        });
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (BuildContext ctx) {
+                      return AddTodoScreen(todo);
+                    }));
                   },
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,8 +173,7 @@ class _TodoScreenState extends State<TodoScreen>
                           opacity: todo.isDone == "false" ? 1 : 0.5,
                           child: Container(
                               width: MediaQuery.of(context).size.width,
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 8.0, vertical: 8.0),
+                              padding: EdgeInsets.symmetric(vertical: 4.0),
                               decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(8.0)),
                               child: Column(
@@ -208,7 +189,28 @@ class _TodoScreenState extends State<TodoScreen>
                                                 : true,
                                             tristate: false,
                                             onChanged: (val) {
+                                              log(val.toString());
                                               todo.isDone = val.toString();
+                                              if (todo.isDone == "true" &&
+                                                  val) {
+                                                _cancelNotification(todo.id);
+                                              } else if (todo.isDone ==
+                                                      "false" &&
+                                                  !val) {
+                                                if (todo.createdAt != '') {
+                                                  var dt = DateTime.parse(
+                                                      todo.createdAt);
+                                                  if (DateTime.now()
+                                                      .isBefore(dt)) {
+                                                    log('evt ' +
+                                                        todo.createdAt);
+                                                    _setNotification(
+                                                        todo,
+                                                        DateTime.parse(
+                                                            todo.createdAt));
+                                                  }
+                                                }
+                                              }
                                               helper.updateTodo(todo);
                                               setState(() {});
                                             },
@@ -223,279 +225,167 @@ class _TodoScreenState extends State<TodoScreen>
                                                         : TextDecoration
                                                             .lineThrough)),
                                           ),
-                                          IconButton(
-                                              alignment: Alignment.centerRight,
-                                              icon: Icon(
-                                                CupertinoIcons.delete_simple,
-                                                color: Colors.red[300],
-                                              ),
-                                              onPressed: () {
-                                                showDialog(
-                                                  context: context,
-                                                  builder:
-                                                      (BuildContext context) {
-                                                    return CupertinoAlertDialog(
-                                                      title: Text(
-                                                        'Delete Todo',
+                                        ]),
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: <Widget>[
+                                        todo.createdAt != ''
+                                            ? Column(
+                                                children: <Widget>[
+                                                  Container(
+                                                      margin: EdgeInsets.only(
+                                                          left: 16.0),
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                              horizontal: 8.0,
+                                                              vertical: 4.0),
+                                                      decoration: BoxDecoration(
+                                                          color:
+                                                              Colors.grey[300],
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      8.0)),
+                                                      child: Row(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: <Widget>[
+                                                          Icon(CupertinoIcons
+                                                              .bell_solid),
+                                                          SizedBox(
+                                                            width: 8.0,
+                                                          ),
+                                                          Text(todo.isDailyTask ==
+                                                                  "false"
+                                                              ? formatDt(DateTime
+                                                                  .parse(todo
+                                                                      .createdAt))
+                                                              : formatTime(DateTime
+                                                                  .parse(todo
+                                                                      .createdAt))),
+                                                          SizedBox(width: 4.0),
+                                                          InkWell(
+                                                            onTap: () {
+                                                              log('mm');
+                                                              todo.createdAt =
+                                                                  '';
+                                                              _cancelNotification(
+                                                                  todo.id);
+
+                                                              helper.updateTodo(
+                                                                  todo);
+                                                              updateTodoList();
+                                                            },
+                                                            child: Icon(
+                                                                Icons.clear),
+                                                          ),
+                                                        ],
+                                                      )),
+                                                ],
+                                              )
+                                            : Container(),
+                                        todo.isDailyTask == "true"
+                                            ? Container(
+                                                margin: EdgeInsets.symmetric(
+                                                    horizontal: 16),
+                                                padding: EdgeInsets.symmetric(
+                                                    vertical: 4.0,
+                                                    horizontal: 8.0),
+                                                //margin: EdgeInsets.all(8.0),
+                                                decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            4),
+                                                    color: Colors.deepPurple),
+                                                child: Text(
+                                                  'Daily Task',
+                                                  style: TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      letterSpacing: 1,
+                                                      color: Colors.white),
+                                                ))
+                                            : Container(),
+                                        IconButton(
+                                            icon: Icon(
+                                              CupertinoIcons.delete_simple,
+                                              color: Colors.red[300],
+                                            ),
+                                            onPressed: () {
+                                              showDialog(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) {
+                                                  return CupertinoAlertDialog(
+                                                    title: Text(
+                                                      'Delete Todo',
+                                                      style: TextStyle(
+                                                          fontFamily:
+                                                              'Montserrat'),
+                                                    ),
+                                                    content: Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              top: 8.0),
+                                                      child: Text(
+                                                        'Are you sure to delete this todo ?',
                                                         style: TextStyle(
                                                             fontFamily:
-                                                                'Montserrat'),
+                                                                'Montserrat',
+                                                            letterSpacing: 0.5),
                                                       ),
-                                                      content: Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .only(top: 8.0),
-                                                        child: Text(
-                                                          'Are you sure to delete this todo ?',
-                                                          style: TextStyle(
-                                                              fontFamily:
-                                                                  'Montserrat',
-                                                              letterSpacing:
-                                                                  0.5),
-                                                        ),
-                                                      ),
-                                                      actions: <Widget>[
-                                                        FlatButton(
-                                                          child: Text('Keep',
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .white)),
-                                                          onPressed: () {
-                                                            Navigator.of(
-                                                                    context)
-                                                                .pop();
-                                                          },
-                                                        ),
-                                                        FlatButton(
-                                                          child: Text(
-                                                            'Delete',
+                                                    ),
+                                                    actions: <Widget>[
+                                                      FlatButton(
+                                                        child: Text('Keep',
                                                             style: TextStyle(
                                                                 color: Colors
-                                                                    .redAccent),
-                                                          ),
-                                                          onPressed: () {
-                                                            _cancelNotification(
-                                                                todo.id);
-                                                            helper.deleteTodo(
-                                                                todo.id);
-
-                                                            updateTodoList();
-                                                            Navigator.of(
-                                                                    context)
-                                                                .pop();
-                                                          },
-                                                        ),
-                                                      ],
-                                                    );
-                                                  },
-                                                );
-                                              })
-                                        ]),
-                                    todo.createdAt != ''
-                                        ? Column(
-                                            children: <Widget>[
-                                              SizedBox(
-                                                height: 16.0,
-                                              ),
-                                              Container(
-                                                  margin: EdgeInsets.only(
-                                                      left: 16.0),
-                                                  padding: EdgeInsets.symmetric(
-                                                      horizontal: 8.0,
-                                                      vertical: 4.0),
-                                                  decoration: BoxDecoration(
-                                                      color: Colors.grey[300],
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8.0)),
-                                                  child: Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: <Widget>[
-                                                      Icon(CupertinoIcons
-                                                          .bell_solid),
-                                                      SizedBox(
-                                                        width: 8.0,
+                                                                    .white)),
+                                                        onPressed: () {
+                                                          Navigator.of(context)
+                                                              .pop();
+                                                        },
                                                       ),
-                                                      Text(formatTimeOfDay(
-                                                          TimeOfDay.fromDateTime(
-                                                              DateTime.parse(todo
-                                                                  .createdAt))))
+                                                      FlatButton(
+                                                        child: Text(
+                                                          'Delete',
+                                                          style: TextStyle(
+                                                              color: Colors
+                                                                  .redAccent),
+                                                        ),
+                                                        onPressed: () {
+                                                          _cancelNotification(
+                                                              todo.id);
+                                                          helper.deleteTodo(
+                                                              todo.id);
+
+                                                          updateTodoList();
+                                                          Navigator.of(context)
+                                                              .pop();
+                                                        },
+                                                      ),
                                                     ],
-                                                  )),
-                                            ],
-                                          )
-                                        : Container()
+                                                  );
+                                                },
+                                              );
+                                            })
+                                      ],
+                                    ),
                                   ])),
                         )
                       ])))),
     );
   }
 
-  String formatTimeOfDay(TimeOfDay tod) {
-    final now = new DateTime.now();
-    final dt = DateTime(now.year, now.month, now.day, tod.hour, tod.minute);
-    final format = DateFormat.jm();
-    return format.format(dt);
+  formatDt(DateTime dt) {
+    var day = dt.day;
+    return DateFormat.MMMd().add_jm().format(dt);
   }
 
-  Widget todoBottomSheet(Todo todo, BuildContext context) {
-    return Container(
-        width: MediaQuery.of(context).size.width,
-        height: 200,
-        padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
-        child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Expanded(
-                child: EditableText(
-                  controller: _taskController,
-                  focusNode: _taskFocus,
-                  onChanged: (val) {
-                    setState(() {
-                      todo.title = val;
-                    });
-                  },
-                  onEditingComplete: () {
-                    setState(() {
-                      todo.title = _taskController.text;
-                    });
-                  },
-                  autofocus: true,
-                  backgroundCursorColor: Colors.deepPurple,
-                  keyboardType: TextInputType.multiline,
-                  maxLines: 10,
-                  style: TextStyle(
-                      fontSize: 14,
-                      height: 1.5,
-                      letterSpacing: 0.5,
-                      fontFamily: 'Montserrat',
-                      color: Colors.black),
-                  cursorColor: Colors.deepPurple,
-                ),
-              ),
-              Container(
-                  height: 64,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      GestureDetector(
-                          onTap: () async {
-                            var now = DateTime.now();
-                            _time = await showTimePicker(
-                                initialTime: todo.createdAt == ''
-                                    ? TimeOfDay(
-                                        hour: now.hour, minute: now.minute)
-                                    : TimeOfDay(
-                                        hour:
-                                            DateTime.parse(todo.createdAt).hour,
-                                        minute: DateTime.parse(todo.createdAt)
-                                            .minute),
-                                context: context);
-
-                            var selectedTime = DateTime(now.year, now.month,
-                                now.day, _time.hour, _time.minute);
-                            if (todo.id != null) {
-                              todo.createdAt = selectedTime.toString();
-                              helper.updateTodo(todo);
-                              _setNotification(todo, selectedTime);
-                              updateTodoList();
-                            } else
-                              todo.createdAt = selectedTime.toString();
-                          },
-                          child: Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 12.0, vertical: 4.0),
-                              decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(8.0)),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: <Widget>[
-                                  Icon(
-                                    CupertinoIcons.bell_solid,
-                                    size: 18.0,
-                                  ),
-                                  SizedBox(width: 4.0),
-                                  todo.createdAt == null || todo.createdAt == ''
-                                      ? Text(
-                                          'Set reminder',
-                                          style: TextStyle(fontSize: 14.0),
-                                        )
-                                      : Row(children: <Widget>[
-                                          Text(
-                                            _time == null || _time == ''
-                                                ? formatTimeOfDay(
-                                                    TimeOfDay.fromDateTime(
-                                                        DateTime.parse(
-                                                            todo.createdAt)))
-                                                : formatTimeOfDay(_time),
-                                            style: TextStyle(
-                                                fontSize: 14.0,
-                                                letterSpacing: 1),
-                                          ),
-                                          SizedBox(width: 8.0),
-                                          GestureDetector(
-                                              onTap: () {
-                                                setState(() {
-                                                  todo.createdAt = '';
-                                                  if (todo.id != null) {
-                                                    helper.updateTodo(todo);
-                                                    _cancelNotification(
-                                                        todo.id);
-                                                    updateTodoList();
-                                                  }
-                                                });
-                                              },
-                                              child: Icon(Icons.clear))
-                                        ]),
-                                ],
-                              ))),
-                      FlatButton(
-                          child: Text(
-                            'Done',
-                            style: TextStyle(
-                                color: Colors.deepPurple,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          onPressed: () async {
-                            log(_taskController.text.length.toString());
-                            if (_taskController.text.length > 0 ||
-                                todo.title.length > 0) {
-                              if (todo.id == null) {
-                                todo.title = _taskController.text;
-
-                                if (_time != null ||
-                                    _time != '' ||
-                                    todo.createdAt != '' ||
-                                    todo.createdAt != null) {
-                                  var now = DateTime.now();
-                                  todo.createdAt = _time != null
-                                      ? DateTime(now.year, now.month, now.day,
-                                              _time.hour, _time.minute)
-                                          .toString()
-                                      : '';
-                                }
-
-                                int id = await helper.insertTodo(todo);
-                                if (todo.createdAt != null ||
-                                    todo.createdAt != '') {
-                                  _setNotificationForNewTodo(id, todo);
-                                }
-                              } else {
-                                helper.updateTodo(todo);
-                              }
-                              updateTodoList();
-
-                              Navigator.pop(context);
-                            }
-                          })
-                    ],
-                  ))
-            ]));
+  String formatTime(DateTime dt) {
+    return DateFormat.jm().format(dt);
   }
 
   void updateTodoList() {
@@ -517,21 +407,7 @@ class _TodoScreenState extends State<TodoScreen>
     await flutterLocalNotificationsPlugin.cancel(id);
   }
 
-  Future _setNotificationForNewTodo(int id, Todo todo) async {
-    var androidSpecificChanges = AndroidNotificationDetails(
-      id.toString(),
-      "channel1",
-      "this is test channel",
-    );
-    var iosSpecificChanges = IOSNotificationDetails();
-
-    var platformChannelSpecifics =
-        NotificationDetails(androidSpecificChanges, iosSpecificChanges);
-    await flutterLocalNotificationsPlugin.schedule(id, 'Todo', todo.title,
-        DateTime.parse(todo.createdAt), platformChannelSpecifics);
-  }
-
-  Future _setNotification(Todo todo, var selectedTime) async {
+  Future _setNotification(Todo todo, DateTime selectedTime) async {
     var androidSpecificChanges = AndroidNotificationDetails(
       todo.id.toString(),
       "channel1",
@@ -541,7 +417,21 @@ class _TodoScreenState extends State<TodoScreen>
 
     var platformChannelSpecifics =
         NotificationDetails(androidSpecificChanges, iosSpecificChanges);
-    await flutterLocalNotificationsPlugin.schedule(
-        todo.id, 'Todo', todo.title, selectedTime, platformChannelSpecifics);
+    if (todo.isDailyTask == 'false') {
+      log(selectedTime.toString());
+
+      await flutterLocalNotificationsPlugin
+          .schedule(todo.id, 'Todo', todo.title, selectedTime,
+              platformChannelSpecifics)
+          .then((v) {
+        log('notification set');
+      });
+    } else {
+      var d = DateTime.parse(todo.createdAt);
+      Time t = Time(d.hour, d.minute);
+      log(t.toString());
+      await flutterLocalNotificationsPlugin.schedule(
+          todo.id, 'Todo', todo.title, selectedTime, platformChannelSpecifics);
+    }
   }
 }

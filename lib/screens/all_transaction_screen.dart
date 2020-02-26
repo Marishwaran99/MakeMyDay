@@ -165,6 +165,12 @@ class _AllTransactionScreenState extends State<AllTransactionScreen> {
                                               );
                                             })
                                       ]),
+                                  budget.description != ''
+                                      ? Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Text(budget.description),
+                                        )
+                                      : Container(),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     crossAxisAlignment: CrossAxisAlignment.end,
