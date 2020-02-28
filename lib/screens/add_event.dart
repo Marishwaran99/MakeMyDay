@@ -263,17 +263,18 @@ class _AddEventScreenState extends State<AddEventScreen> {
     );
     var iosSpecificChanges = IOSNotificationDetails();
 
-    var notfiyAt = new DateTime(
-        selectedTime.year, selectedTime.month, selectedTime.day, 12, 0, 0);
+    var notfiyAt =
+        new DateTime(selectedTime.year, selectedTime.month, selectedTime.day);
 
     var platformChannelSpecifics =
         NotificationDetails(androidSpecificChanges, iosSpecificChanges);
-    await flutterLocalNotificationsPlugin
-        .schedule(event['id'], event['type'], event['title'], notfiyAt,
-            platformChannelSpecifics)
-        .then((v) {
-      print('notify at' + DateFormat.yMMMEd().format(notfiyAt));
-    });
+    if (DateTime.now().isBefore(notfiyAt))
+      await flutterLocalNotificationsPlugin
+          .schedule(event['id'], event['type'], event['title'], notfiyAt,
+              platformChannelSpecifics)
+          .then((v) {
+        print('notify at' + DateFormat.yMMMEd().add_jms().format(notfiyAt));
+      });
   }
 
   formatDate(DateTime dt) {
@@ -303,6 +304,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
         }
       }
       _preferences.setString("events", json.encode(encodeMap(_events)));
+
       _setNotification(event, selectedDay);
       Navigator.pop(context, true);
     }

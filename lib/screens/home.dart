@@ -21,12 +21,14 @@ class _HomeState extends State<Home> {
     BarItem(title: 'Tasks', iconData: Icons.playlist_add_check),
     BarItem(title: 'Notes', iconData: Icons.edit),
     BarItem(title: 'Plan', iconData: Icons.event_note),
+    BarItem(title: 'News', iconData: CupertinoIcons.news_solid),
     BarItem(title: 'Budget', iconData: Icons.attach_money),
   ];
   final List<Widget> _screens = [
     TodoScreen(),
     NotesScreen(),
     CalendarEventsScreen(),
+    NewsPage(),
     BudgetPlanScreen()
   ];
   @override

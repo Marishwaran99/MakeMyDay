@@ -1,4 +1,4 @@
-package com.example.make_my_day
+package com.marish.make_my_day
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity
